@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
-from .models import Category, Genre, Title
+from .models import CustomUser, Category, Genre, Title
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -43,3 +44,5 @@ admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Title, TitleAdmin)
 # admin.site.register(Follow, FollowAdmin)
+
+admin.site.register(CustomUser, UserAdmin)
