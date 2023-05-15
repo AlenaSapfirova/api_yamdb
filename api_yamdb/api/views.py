@@ -1,8 +1,13 @@
-from django.shortcuts import render
-from rest_framework import viewsets
+from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.viewsets import (
+    ModelViewSet,
+    # ReadOnlyModelViewSet,
+    # GenericViewSet
+)
 from rest_framework import permissions
-from reviews.models import CustomUser
-from .serializers import UserSerializer, SignUpSerializer, AdminSerialiser, GetTokenSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -11,9 +16,67 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.models import User
 from rest_framework.decorators import action
-from .permissions import UsersPermission, AdminOnlyPermissions
 
-class UserViewSet(viewsets.ModelViewSet):
+# from .mixins import ModelMixinSet
+from .permissions import IsAdminOrReadOnly, UsersPermission, AdminOnlyPermissions
+from .serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    TitleGetSerializer,
+    TitlePostSerializer,
+    UserSerializer,
+    SignUpSerializer,
+    AdminSerialiser,
+    GetTokenSerializer
+)
+from reviews.models import Category, CustomUser, Genre, Title
+
+
+# from django.shortcuts import render
+# from rest_framework import viewsets
+# from rest_framework import permissions
+# from rest_framework.response import Response
+# from rest_framework.views import APIView
+# from rest_framework import status
+# from django.core.mail import send_mail
+# from rest_framework_simplejwt.tokens import RefreshToken
+# from django.contrib.auth.tokens import default_token_generator
+# from django.contrib.auth.models import User
+# from rest_framework.decorators import action
+
+
+class CategoryViewSet(ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenreViewSet(ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+
+
+class TitleViewSet(ModelViewSet):
+    # queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    # Заменить queryset после появления моделей R&C
+    queryset = Title.objects.annotate(rating=Avg(0))
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'name', 'year')
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleGetSerializer
+        return TitlePostSerializer
+
+class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
     permission_classes = [UsersPermission,  AdminOnlyPermissions]
@@ -64,17 +127,4 @@ class GetToken(APIView):
             return Response({'token': str(access) }, status=status.HTTP_201_CREATED)
         # raise  ValidationError(f'Значение {username} или {confirmation_code} не верно. Проверьте данные или пройдите регистрацию заново')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# class AdminViewSet(viewsets.ModelViewSet):
-#     serializer_class = AdminSerialiser
-#     queryset = CustomUser.objects.all()
-#     permission_classes = [AdminOnlyPermissions, ]
-
-# class ModeratorViewSet(viewsets.ModelViewSet):
-#     serializer_class = ModeratorSerializer
-#     queryset = CustomUser.objects.all()
-   
-
-    
-    
 
