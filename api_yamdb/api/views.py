@@ -7,15 +7,18 @@ from rest_framework.viewsets import (
     # ReadOnlyModelViewSet,
     # GenericViewSet
 )
-from rest_framework import permissions
+from django.core.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
+
 
 # from .mixins import ModelMixinSet
 from .permissions import IsAdminOrReadOnly, UsersPermission, AdminOnlyPermissions
@@ -26,23 +29,11 @@ from .serializers import (
     TitlePostSerializer,
     UserSerializer,
     SignUpSerializer,
-    AdminSerialiser,
+    AdminSerializer,
     GetTokenSerializer
 )
 from reviews.models import Category, CustomUser, Genre, Title
 
-
-# from django.shortcuts import render
-# from rest_framework import viewsets
-# from rest_framework import permissions
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-# from rest_framework import status
-# from django.core.mail import send_mail
-# from rest_framework_simplejwt.tokens import RefreshToken
-# from django.contrib.auth.tokens import default_token_generator
-# from django.contrib.auth.models import User
-# from rest_framework.decorators import action
 
 
 class CategoryViewSet(ModelViewSet):
@@ -76,55 +67,86 @@ class TitleViewSet(ModelViewSet):
             return TitleGetSerializer
         return TitlePostSerializer
 
+
+
 class UserViewSet(ModelViewSet):
-    serializer_class = UserSerializer
+    http_method_names= ['get', 'post', 'delete', 'patch']
+    serializer_class = AdminSerializer 
     queryset = CustomUser.objects.all()
-    permission_classes = [UsersPermission,  AdminOnlyPermissions]
-    lookup_field = 'username'
+    permission_classes = (AdminOnlyPermissions, )
+    # pagination_class = LimitOffsetPagination
+    filter_backends = (SearchFilter, )
+    search_fields = ('username',)
+    lookup_field= 'username'
     
-    @action(methods=['patch'], detail=False, url_path='me')
-    def register_user(self, request):
-        if request.user.is_admin:
-            serializer = AdminSerialiser(request.user, request.data, partial=True)
-        else:
-            serializer == UserSerializer(request.user, request.data, partial=True)
+    @action(
+        methods=['GET', 'PATCH'],
+        detail=False,
+        permission_classes = (IsAuthenticated, ),
+        serializer_class = UserSerializer,
+        url_path='me')
+    def update_profile(self, request):
+        serializer = UserSerializer(request.user)
+        if request.method == 'PATCH':
+            user = get_object_or_404(CustomUser, pk=request.user.id)
+            serializer = self.get_serializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(role=user.role)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data)
+
+        
+    # def get_serializer_class(self):
+    #     if self.request.user.is_admin:
+    #         return AdminSerializer
+    #     return UserSerializer   
+
 
 
 class RegisterAPI(APIView):
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (AllowAny, )
     def post(self, request):
-        serializer = SignUpSerializer
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data['username']
-        email = serializer.validated_data['email']
-        # confirmation_code = default_token_generator.make_token(user)
-        try:
-            user, created= CustomUser.objects.get_or_create(**serializer.validated_data)
-        except Exception as error:
-            return Response((f'Ошибка {error}'), status=status.HTTP_400_BAD_REQUEST)
-        confirmation_code = default_token_generator.make_token(user)
-        user.save()
-        send_mail(
-            subject = self.request.user,
-            message=(f'Код подтверждения {confirmation_code}'),
-            from_email = 'admin@example.com',
-            recipient_list = [email],
-            fail_silently = False
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED) 
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = SignUpSerializer(data=request.data)
+        print(111)
+        if serializer.is_valid(raise_exception=True):
+            data = serializer.validated_data
+            if data['username'] == 'me':
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                username = data['username']
+                email = data['email']
+                user, create = CustomUser.objects.get_or_create(username=username, email=email)
+            except ValueError:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            confirmation_code = default_token_generator.make_token(user)
+            send_mail(
+                subject=self.request.user,
+                message=(f'Код подтверждения {confirmation_code}'),
+                from_email='admin@example.com',
+                recipient_list=[user.email],
+                fail_silently=False
+            )
+            user.save()
+            return Response(serializer.data, status=status.HTTP_200_OK) 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
                 
 class GetToken(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (AllowAny, )
     def post(self, request):
-        serializer = GetTokenSerializer
-        if serializer.is_valid:
-            username = serializer.validated_data['username']
-            confirmation_code = serializer.validated_data['confirmation_code']
-            user = CustomUser.objects.get(username=username, confirmation_code=confirmation_code)
-            access = RefreshToken.for_user(user).access_token
-            return Response({'token': str(access) }, status=status.HTTP_201_CREATED)
+        serializer = GetTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        print(data)
+        username = data['username']
+        confirmation_code = data['confirmation_code']
+        user =  get_object_or_404(CustomUser,username=username)
+        if not default_token_generator.check_token(user, confirmation_code):
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user.save()
+        token = RefreshToken.for_user(user)
+        return Response({'token': str(token.access_token)}, status=status.HTTP_201_CREATED)
         # raise  ValidationError(f'Значение {username} или {confirmation_code} не верно. Проверьте данные или пройдите регистрацию заново')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

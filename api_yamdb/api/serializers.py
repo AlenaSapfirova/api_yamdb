@@ -1,6 +1,5 @@
-
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 # from reviews.models import CustomUser
 from django.core.exceptions import ValidationError
 from rest_framework.serializers import (
@@ -9,7 +8,7 @@ from rest_framework.serializers import (
     SlugRelatedField,
 )
 
-from reviews.models import Category, CustomUser, Genre, Title
+from reviews.models import Category, CustomUser, Genre, Title, TYPE_MODELS
 
 
 class CategorySerializer(ModelSerializer):
@@ -67,11 +66,26 @@ class TitlePostSerializer(ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    last_name = serializers.CharField(max_length=150, required=False)
+    first_name = serializers.CharField(max_length=150, required=False)
+    bio = serializers.CharField(required=False)
+    # username = serializers.CharField(max_length=150, required=True)
+    # # email = serializers.EmailField(required=True)
+    role = serializers.ChoiceField(choices=TYPE_MODELS, required=False, read_only=True)
 
     class Meta:
-        fields = ('username', 'email','role', 'bio', 'first_name', 'Last_name', )
+        fields = (
+            'username',
+            'email',
+            'role',
+            'bio', 
+            'first_name', 
+            'last_name',
+            
+             
+          
+        )
         model = CustomUser
-        read_only_fields = ('role',)
         validators = [
                 UniqueTogetherValidator(
                    queryset=CustomUser.objects.all(),
@@ -79,11 +93,14 @@ class UserSerializer(serializers.ModelSerializer):
             ]
 
 
-class SignUpSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        return CustomUser.objects.get_or_create(**validated_data)
+class SignUpSerializer(serializers.Serializer):
+    username = serializers.RegexField(max_length=150,
+                                      regex=r'^[\w.@+-]+\Z', required=True)
+    email = serializers.EmailField(required=True, max_length=150)
 
-    def validated(self, data):
+
+
+    def validate(self, data):
         email = data['email']
         username = data['username']
         if (
@@ -99,27 +116,21 @@ class SignUpSerializer(serializers.ModelSerializer):
             )
         return data
 
-    email = serializers.EmailField(max_length=255)
-
-    class Meta:
-        fields = ('username', 'email',)
-        model = CustomUser
-        validators = [
-            UniqueTogetherValidator(
-                queryset=CustomUser.objects.all(),
-                fields=('username', 'email'))
-        ]
 
 
-class GetTokenSerializer(serializers.ModelSerializer):
-    token = serializers.CharField(read_only=True, max_length=255)
+class GetTokenSerializer(serializers.Serializer):
+    username = serializers.RegexField(max_length=150,
+                                      regex=r'^[\w.@+-]+\Z', required=True)
+    # email = serializers.EmailField(required=True, max_length=150)
+    confirmation_code = serializers.CharField(max_length=255)
 
-    class Meta:
-        fields = ('username', 'email', 'token', )
-        model = CustomUser
 
+class AdminSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(choices=TYPE_MODELS, default='user')
+    last_name = serializers.CharField(max_length=150, required=False)
+    first_name = serializers.CharField(max_length=150, required=False)
+    bio = serializers.CharField(required=False)
 
-class AdminSerialiser(serializers.ModelSerializer):
     class Meta:
         fields = (
             'username',
@@ -127,7 +138,13 @@ class AdminSerialiser(serializers.ModelSerializer):
             'last_name',
             'role',
             'bio',
-            'is_staff'
+            'email',
         )
         model = CustomUser
+        validators = [
+                UniqueTogetherValidator(
+                   queryset=CustomUser.objects.all(),
+                   fields=('username', 'email'))
+            ]
+   
 

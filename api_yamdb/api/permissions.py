@@ -1,4 +1,3 @@
-
 from rest_framework.permissions import (
     BasePermission,
     SAFE_METHODS
@@ -14,13 +13,8 @@ class IsAdminOrReadOnly(BasePermission):
             return request.user.is_admin
         return False
 
-# from rest_framework import permissions import (
-#     BasePermission,
-#     SAFE_METHODS
-# )
 
-
-class UsersPermission(permissions.BasePermission):
+class UsersPermission(BasePermission):
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
@@ -29,22 +23,38 @@ class UsersPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (
-            self.odj.user == request.user
+            obj.username == request.user
             or request.user.is_admin
             or request.user.is_moderator
-            or request.user.is_staff
+            
         )
 
 
-class AdminOnlyPermissions(permissions.BasePermission):
+class AdminOnlyPermissions(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.method in SAFE_METHODS
-            or request.user.is_authenticated
+            # request.user.is_staff
+            request.user.is_authenticated
+            and (request.user.is_admin
+            or request.user.is_superuser)
+        
         )
 
-    def has_object_permission(self, request, view, obj):
-        return (
-            request.user.as_admin
-            or request.user.is_staff
-        )
+    # def has_object_permission(self, request, view, obj):
+    #     return (
+    #         request.user.is_admin
+    #         # or request.user.is_staff
+            
+    #     )
+    
+# class IsAdmin(BasePermission):
+
+#     def has_permission(self, request, view):
+#         return (
+#             request.user.is_authenticated
+#             and (
+#                 request.user.is_admin
+#                 or self.is_superuser
+#                 or self.is_staff
+#             )
+#         ) 
