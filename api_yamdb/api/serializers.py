@@ -86,12 +86,10 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
+
             'bio',
             'first_name',
             'last_name',
-
-
-
         )
         model = CustomUser
         validators = [
@@ -105,8 +103,6 @@ class SignUpSerializer(serializers.Serializer):
     username = serializers.RegexField(max_length=150,
                                       regex=r'^[\w.@+-]+\Z', required=True)
     email = serializers.EmailField(required=True, max_length=150)
-
-
 
     def validate(self, data):
         email = data['email']
@@ -154,5 +150,4 @@ class AdminSerializer(serializers.ModelSerializer):
                    queryset=CustomUser.objects.all(),
                    fields=('username', 'email'))
             ]
-
 

@@ -8,6 +8,7 @@ from rest_framework.viewsets import (
     GenericViewSet
 )
 from django.core.exceptions import ValidationError
+
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -157,6 +158,7 @@ class GetToken(APIView):
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(CustomUser, username=username)
+
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user.save()

@@ -30,5 +30,4 @@ urlpatterns = [
     path('v1/auth/signup/', RegisterAPI.as_view(), name='signup'),
     # path('v1/api/users/me/', UserViewSet.as_view(), name='users'),
     # path('v1/users/', AdminCreateViewSets.as_view(), name='admin_users')
-
 ]
