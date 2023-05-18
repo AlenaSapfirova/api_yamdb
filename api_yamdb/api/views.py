@@ -5,10 +5,11 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.viewsets import (
     ModelViewSet,
     # ReadOnlyModelViewSet,
-    # GenericViewSet
+    GenericViewSet
 )
 from django.core.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -20,7 +21,13 @@ from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 
 
-# from .mixins import ModelMixinSet
+from rest_framework.mixins import (
+    CreateModelMixin,
+    ListModelMixin,
+    DestroyModelMixin
+)
+
+
 from .permissions import IsAdminOrReadOnly, UsersPermission, AdminOnlyPermissions
 from .serializers import (
     CategorySerializer,
@@ -35,23 +42,34 @@ from .serializers import (
 from reviews.models import Category, CustomUser, Genre, Title
 
 
-
-class CategoryViewSet(ModelViewSet):
+class CategoryViewSet(
+    CreateModelMixin,
+    ListModelMixin,
+    DestroyModelMixin,
+    GenericViewSet
+):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
-class GenreViewSet(ModelViewSet):
+class GenreViewSet(
+    CreateModelMixin,
+    ListModelMixin,
+    DestroyModelMixin,
+    GenericViewSet
+):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class TitleViewSet(ModelViewSet):
@@ -68,22 +86,21 @@ class TitleViewSet(ModelViewSet):
         return TitlePostSerializer
 
 
-
 class UserViewSet(ModelViewSet):
-    http_method_names= ['get', 'post', 'delete', 'patch']
-    serializer_class = AdminSerializer 
+    http_method_names = ['get', 'post', 'delete', 'patch']
+    serializer_class = AdminSerializer
     queryset = CustomUser.objects.all()
     permission_classes = (AdminOnlyPermissions, )
     # pagination_class = LimitOffsetPagination
     filter_backends = (SearchFilter, )
     search_fields = ('username',)
-    lookup_field= 'username'
-    
+    lookup_field = 'username'
+
     @action(
         methods=['GET', 'PATCH'],
         detail=False,
-        permission_classes = (IsAuthenticated, ),
-        serializer_class = UserSerializer,
+        permission_classes=(IsAuthenticated, ),
+        serializer_class=UserSerializer,
         url_path='me')
     def update_profile(self, request):
         serializer = UserSerializer(request.user)
@@ -95,16 +112,15 @@ class UserViewSet(ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data)
 
-        
     # def get_serializer_class(self):
     #     if self.request.user.is_admin:
     #         return AdminSerializer
-    #     return UserSerializer   
-
+    #     return UserSerializer
 
 
 class RegisterAPI(APIView):
     permission_classes = (AllowAny, )
+
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         print(111)
@@ -127,13 +143,13 @@ class RegisterAPI(APIView):
                 fail_silently=False
             )
             user.save()
-            return Response(serializer.data, status=status.HTTP_200_OK) 
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-                
 class GetToken(APIView):
     permission_classes = (AllowAny, )
+
     def post(self, request):
         serializer = GetTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -141,12 +157,12 @@ class GetToken(APIView):
         print(data)
         username = data['username']
         confirmation_code = data['confirmation_code']
-        user =  get_object_or_404(CustomUser,username=username)
+        user = get_object_or_404(CustomUser, username=username)
+
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user.save()
         token = RefreshToken.for_user(user)
         return Response({'token': str(token.access_token)}, status=status.HTTP_201_CREATED)
         # raise  ValidationError(f'Значение {username} или {confirmation_code} не верно. Проверьте данные или пройдите регистрацию заново')
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

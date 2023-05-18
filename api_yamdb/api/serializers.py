@@ -56,6 +56,7 @@ class TitlePostSerializer(ModelSerializer):
 
     class Meta:
         fields = (
+            'id',
             'name',
             'year',
             'description',
@@ -63,6 +64,13 @@ class TitlePostSerializer(ModelSerializer):
             'category'
         )
         model = Title
+
+        def validate_name(self, value):
+            if len(value) > 256:
+                raise serializers.ValidationError(
+                    'Название произведения не может быть длиннее 256 символов.'
+                )
+            return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -78,12 +86,10 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
-            'bio', 
-            'first_name', 
+
+            'bio',
+            'first_name',
             'last_name',
-            
-             
-          
         )
         model = CustomUser
         validators = [
@@ -98,8 +104,6 @@ class SignUpSerializer(serializers.Serializer):
                                       regex=r'^[\w.@+-]+\Z', required=True)
     email = serializers.EmailField(required=True, max_length=150)
 
-
-
     def validate(self, data):
         email = data['email']
         username = data['username']
@@ -111,8 +115,8 @@ class SignUpSerializer(serializers.Serializer):
             and CustomUser.objects.get(username=username).email != email
         ):
             raise ValidationError(
-                f'Указанные данные уже есть в базе и '
-                f'принадлежат другому пользователю'
+                'Указанные данные уже есть в базе и '
+                'принадлежат другому пользователю'
             )
         return data
 
@@ -146,5 +150,4 @@ class AdminSerializer(serializers.ModelSerializer):
                    queryset=CustomUser.objects.all(),
                    fields=('username', 'email'))
             ]
-   
 

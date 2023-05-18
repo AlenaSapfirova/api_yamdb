@@ -33,16 +33,20 @@ class TitleAdmin(admin.ModelAdmin):
     )
 
 
-# class FollowAdmin(admin.ModelAdmin):
+# class CustomUserAdmin(admin.ModelAdmin):
 #     list_display = (
-#         'user',
-#         'author'
+#         "username",
+#         "email",
+#         "first_name",
+#         "last_name",
+#         "bio",
+#         "role"
 #     )
 
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Title, TitleAdmin)
-# admin.site.register(Follow, FollowAdmin)
+# admin.site.register(CustomUser, CustomUserAdmin)
 
 admin.site.register(CustomUser, UserAdmin)
