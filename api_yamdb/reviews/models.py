@@ -17,12 +17,13 @@ TYPE_MODELS = [
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, 
                               blank=False,
-                              max_length=250)
-    username = models.CharField(max_length=100, unique=True, blank=False, validators=[RegexValidator(regex='^[\w.@+-]+\Z')])
-    first_name = models.CharField(blank=False, max_length=20)
-    last_name = models.CharField(max_length=50, blank=False)
-    role = models.CharField(max_length=15, choices=TYPE_MODELS)
+                              max_length=100)
+    username = models.CharField(max_length=100, unique=True, blank=False, validators=[RegexValidator(regex=r'^[\w.@+-]+\Z')])
+    first_name = models.CharField(blank=False, max_length=50)
+    last_name = models.CharField(max_length=150, blank=False)
+    role = models.CharField(max_length=15, choices=TYPE_MODELS, blank=True)
     bio = models.TextField()
+   
 
 
     USERNAME_FIELD = 'email'
