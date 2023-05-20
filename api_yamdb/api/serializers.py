@@ -1,14 +1,21 @@
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-# from reviews.models import CustomUser
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from rest_framework.serializers import (
     IntegerField,
     ModelSerializer,
-    SlugRelatedField,
+    SlugRelatedField
 )
-
-from reviews.models import Category, CustomUser, Genre, Title, TYPE_MODELS
+from rest_framework.validators import UniqueTogetherValidator
+from reviews.models import (
+    TYPE_MODELS,
+    Category,
+    Comment,
+    CustomUser,
+    Genre,
+    Review,
+    Title
+)
 
 
 class CategorySerializer(ModelSerializer):
@@ -77,16 +84,17 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=150, required=False)
     first_name = serializers.CharField(max_length=150, required=False)
     bio = serializers.CharField(required=False)
-    # username = serializers.CharField(max_length=150, required=True)
-    # # email = serializers.EmailField(required=True)
-    role = serializers.ChoiceField(choices=TYPE_MODELS, required=False, read_only=True)
+    role = serializers.ChoiceField(
+        choices=TYPE_MODELS,
+        required=False,
+        read_only=True
+    )
 
     class Meta:
         fields = (
             'username',
             'email',
             'role',
-
             'bio',
             'first_name',
             'last_name',
@@ -121,7 +129,6 @@ class SignUpSerializer(serializers.Serializer):
         return data
 
 
-
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.RegexField(max_length=150,
                                       regex=r'^[\w.@+-]+\Z', required=True)
@@ -151,3 +158,49 @@ class AdminSerializer(serializers.ModelSerializer):
                    fields=('username', 'email'))
             ]
 
+
+class ReviewSerializer(serializers.ModelSerializer):
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    def validate(self, attrs):
+        request = self.context['request']
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        author = request.user
+        if (
+            request.method == 'POST'
+            and Review.objects.filter(title=title, author=author).exists()
+        ):
+            raise serializers.ValidationError(
+                'Вы уже оставляли отзыв к данному произведению!'
+            )
+        return attrs
+
+    class Meta:
+        author = serializers.SlugRelatedField(
+            slug_field='username',
+            read_only=True
+        )
+        fields = ('id', 'text', 'score', 'pub_date', 'author')
+        model = Review
+        validators = []
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )
+        model = Comment
