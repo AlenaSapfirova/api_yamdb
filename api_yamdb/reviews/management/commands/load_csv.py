@@ -19,8 +19,8 @@ FILES = {
     Title: 'titles.csv',
     Title_Genre: 'genre_title.csv',
     CustomUser: 'users.csv',
-    Comment: 'comments.csv',
     Review: 'review.csv',
+    Comment: 'comments.csv',
 }
 
 MODELS_FIELDS = {

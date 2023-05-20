@@ -10,10 +10,8 @@ class CategoryAdmin(admin.ModelAdmin):
         'name',
         'slug',
     )
-    # list_editable = ('pk',)
     search_fields = ('name',)
     list_filter = ('name',)
-    # empty_value_display = '-пусто-'
 
 
 class GenreAdmin(admin.ModelAdmin):
@@ -33,20 +31,7 @@ class TitleAdmin(admin.ModelAdmin):
     )
 
 
-# class CustomUserAdmin(admin.ModelAdmin):
-#     list_display = (
-#         "username",
-#         "email",
-#         "first_name",
-#         "last_name",
-#         "bio",
-#         "role"
-#     )
-
-
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Title, TitleAdmin)
-# admin.site.register(CustomUser, CustomUserAdmin)
-
 admin.site.register(CustomUser, UserAdmin)

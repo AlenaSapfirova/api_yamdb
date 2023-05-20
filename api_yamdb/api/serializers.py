@@ -1,24 +1,20 @@
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-# from reviews.models import CustomUser
-
 from rest_framework.serializers import (
     IntegerField,
     ModelSerializer,
-    SlugRelatedField,
+    SlugRelatedField
 )
-
+from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import (
+    TYPE_MODELS,
     Category,
     Comment,
     CustomUser,
     Genre,
     Review,
-    Title,
-    TYPE_MODELS
+    Title
 )
 
 
@@ -88,8 +84,6 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=150, required=False)
     first_name = serializers.CharField(max_length=150, required=False)
     bio = serializers.CharField(required=False)
-    # username = serializers.CharField(max_length=150, required=True)
-    # # email = serializers.EmailField(required=True)
     role = serializers.ChoiceField(
         choices=TYPE_MODELS,
         required=False,
@@ -101,7 +95,6 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
-
             'bio',
             'first_name',
             'last_name',
@@ -168,24 +161,46 @@ class AdminSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
 
-    def validate(self, attr):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    def validate(self, attrs):
+        request = self.context['request']
         title_id = self.context.get('view').kwargs.get('title_id')
-        # title_id = self.context['view'].kwargs.get('title_id')  # такой вариант написания встречал
         title = get_object_or_404(Title, pk=title_id)
-        # author = self.context['request'].user
-        # if Review.objects.filter(title=title, author=author).exists():
-        if Review.objects.filter(title=title).exists():
+        author = request.user
+        if (
+            request.method == 'POST'
+            and Review.objects.filter(title=title, author=author).exists()
+        ):
             raise serializers.ValidationError(
-                'Вы уже оставляли отзыв к данному произведению!')
-        return attr
+                'Вы уже оставляли отзыв к данному произведению!'
+            )
+        return attrs
 
     class Meta:
-        fields = ('id', 'text', 'score', 'pub_date')
+        author = serializers.SlugRelatedField(
+            slug_field='username',
+            read_only=True
+        )
+        fields = ('id', 'text', 'score', 'pub_date', 'author')
         model = Review
+        validators = []
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
 
     class Meta:
-        fields = ('id', 'text', 'pub_date')
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )
         model = Comment
