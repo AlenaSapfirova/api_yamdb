@@ -4,7 +4,6 @@ from django.db import models
 
 from api_yamdb.settings import LEN_TEXT
 
-
 USER = 'user'
 MODERATOR = 'moderator'
 ADMIN = 'admin'
@@ -150,7 +149,7 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        through='Title_Genre',
+        through='TitleGenre',
         related_name='titles',
         verbose_name='жанр'
     )
@@ -164,7 +163,7 @@ class Title(models.Model):
         return self.name
 
 
-class Title_Genre(models.Model):
+class TitleGenre(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,

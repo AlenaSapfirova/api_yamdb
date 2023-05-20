@@ -7,6 +7,7 @@ from rest_framework.serializers import (
     SlugRelatedField
 )
 from rest_framework.validators import UniqueTogetherValidator
+
 from reviews.models import (
     TYPE_MODELS,
     Category,
@@ -101,10 +102,10 @@ class UserSerializer(serializers.ModelSerializer):
         )
         model = CustomUser
         validators = [
-                UniqueTogetherValidator(
-                   queryset=CustomUser.objects.all(),
-                   fields=('username', 'email'))
-            ]
+            UniqueTogetherValidator(
+                queryset=CustomUser.objects.all(),
+                fields=('username', 'email'))
+        ]
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -153,10 +154,10 @@ class AdminSerializer(serializers.ModelSerializer):
         )
         model = CustomUser
         validators = [
-                UniqueTogetherValidator(
-                   queryset=CustomUser.objects.all(),
-                   fields=('username', 'email'))
-            ]
+            UniqueTogetherValidator(
+                queryset=CustomUser.objects.all(),
+                fields=('username', 'email'))
+        ]
 
 
 class ReviewSerializer(serializers.ModelSerializer):

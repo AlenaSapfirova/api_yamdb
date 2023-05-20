@@ -10,14 +10,14 @@ from reviews.models import (
     Genre,
     Review,
     Title,
-    Title_Genre
+    TitleGenre
 )
 
 FILES = {
     Category: 'category.csv',
     Genre: 'genre.csv',
     Title: 'titles.csv',
-    Title_Genre: 'genre_title.csv',
+    TitleGenre: 'genretitle.csv',
     CustomUser: 'users.csv',
     Review: 'review.csv',
     Comment: 'comments.csv',
