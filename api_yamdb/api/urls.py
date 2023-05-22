@@ -6,11 +6,12 @@ from .views import (
     CommentViewSet,
     GenreViewSet,
     TitleViewSet,
-    UserViewSet,
-    RegisterAPI,
     ReviewViewSet,
-    GetToken
+    GetToken,
+    UserViewSet,
+    RegisterAPI
 )
+
 
 app_name = 'api'
 

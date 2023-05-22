@@ -1,88 +1,10 @@
-from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+# from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 
+from users.models import CustomUser
+
 from api_yamdb.settings import LEN_TEXT
-
-USER = 'user'
-MODERATOR = 'moderator'
-ADMIN = 'admin'
-
-RATING_CHOICES = (
-    (10, '10'),
-    (9, '9'),
-    (8, '8'),
-    (7, '7'),
-    (6, '6'),
-    (5, '5'),
-    (4, '4'),
-    (3, '3'),
-    (2, '2'),
-    (1, '1'),
-)
-
-TYPE_MODELS = [
-    (USER, USER),
-    (MODERATOR, MODERATOR),
-    (ADMIN, ADMIN),
-]
-
-
-class CustomUser(AbstractUser):
-    email = models.EmailField(
-        unique=True,
-        blank=False,
-        max_length=100,
-        verbose_name='адрес почты'
-    )
-    username = models.CharField(
-        max_length=100,
-        unique=True,
-        blank=False,
-        validators=[RegexValidator(regex=r'^[\w.@+-]+\Z')],
-        verbose_name='ник'
-    )
-    first_name = models.CharField(
-        blank=False,
-        max_length=50,
-        verbose_name='имя'
-    )
-    last_name = models.CharField(
-        max_length=150,
-        blank=False,
-        verbose_name='фамилия'
-    )
-    role = models.CharField(
-        max_length=15,
-        choices=TYPE_MODELS,
-        blank=True,
-        verbose_name='роль'
-    )
-    bio = models.TextField(verbose_name='биография')
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
-
-    @property
-    def is_admin(self):
-        return self.role == ADMIN
-
-    @property
-    def is_moderator(self):
-        return self.role == MODERATOR
-
-    @property
-    def is_user(self):
-        return self.role == USER
-
-    class Meta:
-        verbose_name = 'пользователь'
-        verbose_name_plural = 'пользователи'
-        ordering = ('id',)
-
-    def __str__(self):
-        return f'{self.username} {self.email}'
-
 
 class Category(models.Model):
     name = models.CharField(
@@ -132,11 +54,11 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='год',
+        validators =[MinValueValidator(0)]
     )
     description = models.CharField(
         max_length=200,
         blank=True,
-        null=True,
         verbose_name='описание'
     )
     category = models.ForeignKey(
@@ -192,9 +114,12 @@ class Review(models.Model):
         verbose_name='произведение'
     )
     score = models.IntegerField(
-        choices=RATING_CHOICES,
         default=None,
-        verbose_name='оценка'
+        verbose_name='оценка',
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ]
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 

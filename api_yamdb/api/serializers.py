@@ -9,14 +9,13 @@ from rest_framework.serializers import (
 from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import (
-    TYPE_MODELS,
     Category,
     Comment,
-    CustomUser,
     Genre,
     Review,
     Title
 )
+from users.models import CustomUser, TYPE_MODELS
 
 
 class CategorySerializer(ModelSerializer):
@@ -52,6 +51,7 @@ class TitleGetSerializer(ModelSerializer):
 
 
 class TitlePostSerializer(ModelSerializer):
+    rating = IntegerField(read_only=True, default=0)
     category = SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -59,7 +59,8 @@ class TitlePostSerializer(ModelSerializer):
     genre = SlugRelatedField(
         queryset=Genre.objects.all(),
         slug_field='slug',
-        many=True
+        many=True,
+        required=True
     )
 
     class Meta:
@@ -67,18 +68,25 @@ class TitlePostSerializer(ModelSerializer):
             'id',
             'name',
             'year',
+            'rating',
             'description',
             'genre',
             'category'
         )
         model = Title
 
-        def validate_name(self, value):
-            if len(value) > 256:
-                raise serializers.ValidationError(
-                    'Название произведения не может быть длиннее 256 символов.'
-                )
-            return value
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['category'] = CategorySerializer(
+            instance=instance.category,
+            read_only=True
+        ).data
+        representation['genre'] = GenreSerializer(
+            instance=instance.genre,
+            read_only=True,
+            many=True
+        ).data
+        return representation    
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -128,12 +136,15 @@ class SignUpSerializer(serializers.Serializer):
                 'принадлежат другому пользователю'
             )
         return data
+    def validate_username(self, value):
+        if value == 'me':
+            raise ValidationError('Ошибка! Выберете другое имя.')
+        return value
 
 
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.RegexField(max_length=150,
                                       regex=r'^[\w.@+-]+\Z', required=True)
-    # email = serializers.EmailField(required=True, max_length=150)
     confirmation_code = serializers.CharField(max_length=255)
 
 
@@ -188,7 +199,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         )
         fields = ('id', 'text', 'score', 'pub_date', 'author')
         model = Review
-        validators = []
 
 
 class CommentSerializer(serializers.ModelSerializer):

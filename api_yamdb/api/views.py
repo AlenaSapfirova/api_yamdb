@@ -117,14 +117,8 @@ class RegisterAPI(APIView):
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
-        print(111)
         if serializer.is_valid(raise_exception=True):
             data = serializer.validated_data
-            if data['username'] == 'me':
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             try:
                 username = data['username']
                 email = data['email']
@@ -157,7 +151,6 @@ class GetToken(APIView):
         serializer = GetTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        print(data)
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(CustomUser, username=username)
@@ -171,7 +164,7 @@ class GetToken(APIView):
         token = RefreshToken.for_user(user)
         return Response(
             {'token': str(token.access_token)},
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_200_OK
         )
 
 

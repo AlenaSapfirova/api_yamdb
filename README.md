@@ -85,3 +85,50 @@ cd api_yamdb
 ```
 python manage.py runserver
 ```
+Примеры запросов:
+
+1. Регистрация пользователя:
+
+POST запрос на адрес
+http://127.0.0.1:8000/api/v1/auth/signup/
+
+{
+"email": "user@example.com",
+"username": "string"
+} 
+ возвращается:
+
+ {
+"email": "string",
+"username": "string"
+}
+
+отправляется с письмо с confirmation_code
+
+2. Получение токена:
+
+POST запрос на адрес 
+http://127.0.0.1:8000/api/v1/auth/token/
+
+{
+"username": "string",
+"confirmation_code": "string"
+}
+
+Возвращается токен:
+
+Copy
+{
+"token": "string"
+}
+
+Прописывается во вкладке Authorizition в графе Token
+
+Примеры других запросов можно посмотреть по адресу 
+http://127.0.0.1:8000/redoc/#section/Opisanie
+
+
+Авторы проекта:
+1. Сапфирова Елена (тимлид, Users/Authenticated)
+2. Олег Дурнов (Titles, Categories, Genres)
+3. Светлана Рязанова (Reviews и Comments)
