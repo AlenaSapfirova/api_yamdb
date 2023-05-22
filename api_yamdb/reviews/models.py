@@ -1,10 +1,12 @@
-# from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator
+)
 from django.db import models
 
+from api_yamdb.settings import LEN_TEXT
 from users.models import CustomUser
 
-from api_yamdb.settings import LEN_TEXT
 
 class Category(models.Model):
     name = models.CharField(
@@ -54,7 +56,7 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='год',
-        validators =[MinValueValidator(0)]
+        validators=[MinValueValidator(0)]
     )
     description = models.CharField(
         max_length=200,

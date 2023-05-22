@@ -14,7 +14,6 @@ class IsAdminOrReadOnly(BasePermission):
         )
 
 
-
 class AdminOnlyPermissions(BasePermission):
     def has_permission(self, request, view):
         return (

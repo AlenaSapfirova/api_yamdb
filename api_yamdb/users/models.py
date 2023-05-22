@@ -13,6 +13,7 @@ TYPE_MODELS = [
     (ADMIN, ADMIN),
 ]
 
+
 class CustomUser(AbstractUser):
     email = models.EmailField(
         unique=True,
