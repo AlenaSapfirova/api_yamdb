@@ -86,7 +86,7 @@ class TitlePostSerializer(ModelSerializer):
             read_only=True,
             many=True
         ).data
-        return representation    
+        return representation
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -136,6 +136,7 @@ class SignUpSerializer(serializers.Serializer):
                 'принадлежат другому пользователю'
             )
         return data
+
     def validate_username(self, value):
         if value == 'me':
             raise ValidationError('Ошибка! Выберете другое имя.')
